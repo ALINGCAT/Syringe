@@ -1,0 +1,3 @@
+# <div style="text-align: center;">注射器</div>
+<div style="text-align: center;">更好得使用药水效果</div>
+新增物品注射器 一支注射器可以储存一瓶药水效果 使用时扣除玩家1点血量并获得效果
