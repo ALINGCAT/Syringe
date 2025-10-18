@@ -1,0 +1,13 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "syringe:item/syringe",
+    "layer1": "syringe:item/liquid"
+  },
+  "overrides": [
+    {
+      "predicate": { "syringe:empty": 1 },
+      "model": "syringe:item/syringe_empty"
+    }
+  ]
+}
