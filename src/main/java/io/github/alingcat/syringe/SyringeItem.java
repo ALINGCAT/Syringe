@@ -1,5 +1,6 @@
 package io.github.alingcat.syringe;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -9,8 +10,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.*;
 import net.minecraft.world.item.alchemy.PotionUtils;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,21 +27,22 @@ public class SyringeItem extends Item {
     @Override
     public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, @NotNull Player player, @NotNull InteractionHand hand) {
         var stack = player.getItemInHand(hand);
-        if (SyringeItem.isEmpty(stack)) {
-            if (player.getOffhandItem().getItem() instanceof PotionItem) {
+        if (player.isShiftKeyDown()) {
+            if (SyringeItem.isEmpty(stack) && player.getOffhandItem().getItem() instanceof PotionItem) {
                 player.startUsingItem(hand);
                 return InteractionResultHolder.consume(stack);
             } else return InteractionResultHolder.fail(stack);
+        } else {
+            if (isEmpty(stack) && player.getOffhandItem().getItem() == Items.GLASS_BOTTLE)
+                return InteractionResultHolder.fail(stack);
+            player.hurt(player.damageSources().generic(), Config.InjectDamage.get().floatValue());
+            for (var effect : PotionUtils.getMobEffects(stack)) {
+                if (effect.getEffect().isInstantenous())
+                    effect.applyEffect(player);
+                else player.addEffect(effect);
+            }
+            stack.setTag(new CompoundTag());
         }
-        if (player.isShiftKeyDown())
-            return InteractionResultHolder.fail(stack);
-        player.hurt(player.damageSources().generic(), player.getHealth() > 1.0f ? 1.0f : 0.0f);
-        for (var effect : PotionUtils.getMobEffects(stack)) {
-            if (effect.getEffect().isInstantenous())
-                effect.applyEffect(player);
-            else player.addEffect(effect);
-        }
-        stack.setTag(new CompoundTag());
         return InteractionResultHolder.success(stack);
     }
 
@@ -61,7 +61,7 @@ public class SyringeItem extends Item {
 
     @Override
     public int getUseDuration(@NotNull ItemStack stack) {
-        return 20;
+        return (int)(Config.ReloadPotionTime.get() * 20.0);
     }
 
     @Override
@@ -71,6 +71,10 @@ public class SyringeItem extends Item {
 
     @Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tips, @NotNull TooltipFlag flag) {
+        if (isEmpty(stack)) {
+            tips.add(Component.translatable("syringe.empty_tip1").withStyle(ChatFormatting.GRAY));
+            tips.add(Component.translatable("syringe.empty_tip2").withStyle(ChatFormatting.GRAY));
+        }
         PotionUtils.addPotionTooltip(stack, tips, 1.0f);
     }
 }
